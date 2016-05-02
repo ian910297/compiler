@@ -1,0 +1,21 @@
+// A program to sum 1 to N
+procedure SUM is
+  declare
+    _N: integer;
+    S: integer;
+    I: integer;
+begin
+  read N;
+  if N < 0 then
+    write -1;
+  exit;
+  else
+    S := 0;
+  end if;
+  for I in 1..N loop
+    S := S + I;
+  end loop;
+  write S;
+end;
+1+2;
+1 + 2;
