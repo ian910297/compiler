@@ -1,0 +1,50 @@
+// A sample Rose program
+
+procedure EMPTY is
+    declare
+        APPLE: integer; // declare a variable which name is APPLE
+        BANANA: integer; // declare a variable which name is BANANA
+        CAR: integer; // declare a variable which name is CAR
+    begin
+        APPLE := 10;
+        BANANA := 50;
+        CAR := 24;
+
+        // if test
+        if 1 <> 1 then
+            // exit test
+            exit;
+        end if;
+
+        if APPLE % 5 + 7 >= BANANA then
+            // read write test
+            read APPLE;
+            write BANANA;
+            write (6 + 1) * (5 - (2 % 3)) / 1;
+        else
+            // for test
+            for APPLE in 5 + 7 .. BANANA * 10 loop
+                CAR := CAR + CAR;
+            end loop;
+        end if;
+
+        if APPLE > 5 && BANANA <= 10 || CAR = 4 then
+            // just empty
+        end if;
+
+        if ! APPLE <> 0 || ! BANANA <> 0 then
+            APPLE := 5;
+            APPLE := BANANA * (CAR + 5);
+        else
+            if APPLE = APPLE && - BANANA >= 0 then
+                for CAR in 0 .. -1 loop
+                    for BANANA in 0 .. 10 loop
+                        for APPLE in 0 .. 5 loop
+                            write APPLE + BANANA + CAR;
+                        end loop;
+                    end loop;
+                end loop;
+            end if;
+        end if;
+    end;
+// end
