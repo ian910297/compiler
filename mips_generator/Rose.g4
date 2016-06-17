@@ -10,6 +10,13 @@ options {
 }
 
 @members {
+  private int label = 0;
+  private int reg = 0;
+
+  private int if_true;
+  private int if_false;
+  private int if_break;
+
   // Produce Declare Expression
   private String declare(String str) {
     String name = str.split(":")[0];
@@ -59,8 +66,8 @@ options {
 // Parser Rules
 program : PROCEDURE Identifier IS
 { System.out.println(".data"); } DECLARE variables
-{ System.out.println(".main"); } BEGIN statements
-{ System.out.println("exit"); } END Semi;
+{ System.out.println(".text"); System.out.println("main:"); } BEGIN statements
+END Semi;
 
 variables
 : variables variable { System.out.println(declare($variable.text)); }
@@ -99,13 +106,42 @@ assignment_statement
 ;
 
 if_statement
-: ( 'if' bool_expression 'then' statements 'end' 'if' ';'
-    | 'if' bool_expression 'then' statements 'else' statements 'end' 'if' ';'
+: ( 'if' if_result=bool_expression 'then' {
+      if_true = label++;
+      if_false = label++;
+      if_break = label++;
+
+      System.out.println("beqz\t\$t" + reg + ", L" + if_true);
+      System.out.println("L" + if_true + ":");
+    }
+    statements {
+      System.out.println("L" + if_break + ":");
+    }
+    'end' 'if' ';'
+    | 'if' bool_expression 'then' {
+      if_true = label++;
+      if_false = label++;
+      if_break = label++;
+
+      System.out.println("beqz\t\$t" + reg + ", L" + if_true);
+      System.out.println("L" + if_true + ":");
+    }
+    statements 'else' {
+      System.out.println("L" + if_false + ":");
+    }
+    statements {
+      System.out.println("L" + if_break + ":");
+    }
+    'end' 'if' ';'
   )
 ;
 
 for_statement
-: 'for' Identifier 'in' arith_expression '..' arith_expression 'loop' statements 'end' 'loop' ';'
+: 'for' { System.out.println("L" + label + ":"); }
+  Identifier 'in' for_start=arith_expression '..' for_end=arith_expression 'loop'
+  { System.out.println($for_start.expr + ", " + $for_end.expr); }
+  statements
+  'end' 'loop' ';'
 ;
 
 exit_statement
@@ -113,26 +149,28 @@ exit_statement
 ;
 
 read_statement
-: 'read' Identifier ';'
+: 'read' Identifier ';' {
+    System.out.println("li\t\$v0, 5");
+    System.out.println("syscall");
+
+    System.out.println("la\t\$t1, " + $Identifier.text);
+    System.out.println("sw\t\$v0, 0(\$t1)");
+  }
 ;
 
 write_statement
-: 'write' arith_expression ';'
+: 'write' {
+    System.out.println("#####Write");
+  }
+  print=arith_expression ';' {
+    System.out.println("move \t\$a0, \$t" + (reg-1));
+    System.out.println("li\t\$v0, 1");
+    System.out.println("syscall");
+
+    reg--;
+  }
 ;
 
-/*
-   bool_expression
-   : ( bool_expression '||' bool_term
-   | bool_term
-   )
-   ;
-
-   bool_term
-   : ( bool_term '&&' bool_factor
-   | bool_factor
-   )
-   ;
- */
 bool_expression
 : bool_term bool_expression_R
 ;
@@ -158,38 +196,54 @@ bool_factor
 ;
 
 bool_primary
-: arith_expression relation_op arith_expression
+: arith_expression relation_op arith_expression {
+    if($relation_op.text == "=") {
+
+    } else if($relation_op.text == "<>") {
+
+    } else {
+      if($relation_op.text == "<") {
+
+      } else if($relation_op.text == ">") {
+
+      } else if($relation_op.text == "<=") {
+
+      } else if($relation_op.text == ">=") {
+
+      }
+    }
+  }
 ;
 
 relation_op
 : '=' | '<>' | '>' | '>=' | '<' | '<='
 ;
 
-/*
-   arith_expression
-   : ( arith_expression '+' arith_term
-   | arith_expression '-' arith_term
-   | arith_term
-   )
-   ;
-
-   arith_term
-   : ( arith_term '*' arith_factor
-   | arith_term '/' arith_factor
-   | arith_term '%' arith_factor
-   | arith_factor
-   )
-   ;
- */
-
 arith_expression returns [String expr]
-: r_arith_expression=arith_term { $expr=$r_arith_expression.expr; } arith_expression_R
+: r_arith_expression=arith_term arith_expression_R {
+    $expr=$r_arith_expression.expr;
+    System.out.println("##arith return" + $expr);
+  }
 ;
 
 arith_expression_R returns [String expr]
-:   '+' r_arith_expression_R=arith_term { $expr=$r_arith_expression_R.expr; }arith_expression_R
-| '-' r_arith_expression_R=arith_term { $expr=$r_arith_expression_R.expr; }arith_expression_R
-|
+:   '+' r_arith_expression_R=arith_term arith_expression_R {
+      $expr=$r_arith_expression_R.expr;
+
+      System.out.println("add\t\$t" + (reg-2) + ", \$t" + (reg-2) + ", \$t" + (reg-1));
+      reg--;
+
+      System.out.println("###arith_R return" + $expr);
+    }
+  | '-' r_arith_expression_R=arith_term arith_expression_R {
+      $expr=$r_arith_expression_R.expr;
+
+      System.out.println("sub\t\$t" + (reg-2) + ", \$t" + (reg-2) + ", \$t" + (reg-1));
+      reg--;
+
+      System.out.println("###arith_R return" + $expr);
+    }
+  |
 ;
 
 arith_term returns [String expr]
@@ -197,21 +251,45 @@ arith_term returns [String expr]
 ;
 
 arith_term_R returns [String expr]
-:   '*' r_arith_term_R=arith_factor arith_term_R { $expr=$r_arith_term_R.expr; }
-| '/' r_arith_term_R=arith_factor arith_term_R { $expr=$r_arith_term_R.expr; }
-| '%' r_arith_term_R=arith_factor arith_term_R { $expr=$r_arith_term_R.expr; }
-|
+:   '*' r_arith_term_R=arith_factor arith_term_R {
+      $expr=$r_arith_term_R.expr;
+      System.out.println("mult");
+    }
+  | '/' r_arith_term_R=arith_factor arith_term_R {
+      $expr=$r_arith_term_R.expr;
+
+    }
+  | '%' r_arith_term_R=arith_factor arith_term_R {
+      $expr=$r_arith_term_R.expr;
+    }
+  |
 ;
 
 arith_factor returns [String expr]
-: ( '-' r_arith_factor=arith_primary { $expr=$r_arith_factor.expr; }
+: ( '-' r_arith_factor=arith_primary {
+      $expr=$r_arith_factor.expr;
+      System.out.println("li\t\$t" + reg + ", 0");
+      System.out.println("sub\t\$t" + (reg-1) + ", \$t" + (reg-1) + ", \$t" + (reg-1));
+      System.out.println("sub\t\$t" + (reg-1) + ", \$t" + (reg-1) + ", \$t" + (reg-1));
+    }
     | r_arith_factor=arith_primary { $expr=$r_arith_factor.expr; }
   )
 ;
 
 arith_primary returns [String expr]
-: ( Constant { $expr=$Constant.text; }
-    | Identifier { $expr=$Identifier.text; }
+: ( Constant {
+      $expr=$Constant.text;
+
+      System.out.println("li\t\$t" + reg + ", " + $Constant.text);
+      reg++;
+    }
+    | Identifier {
+      $expr=$Identifier.text;
+
+      System.out.println("la\t\$t" + (reg+1) + ", " +$Identifier.text);
+      System.out.println("lw\t\$t" + reg + ", 0(\$t" + (reg+1) + ")");
+      reg++;
+    }
     | '(' r_arith_primary=arith_expression ')' { $expr=$r_arith_primary.expr; }
   )
 ;
@@ -220,9 +298,9 @@ Identifier
 : ( Uppercase
     | '_'
   )
-( Uppercase
-  | '_'
-  | Digit
+  ( Uppercase
+    | '_'
+    | Digit
   )*
 ;
 

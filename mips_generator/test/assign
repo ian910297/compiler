@@ -6,8 +6,10 @@ procedure EMPTY is
         BANANA: integer; // declare a variable which name is BANANA
         CAR: integer; // declare a variable which name is CAR
     begin
+        // assign immediate value
         APPLE := 10;
-        BANANA := 50;
+
+        // assign a variable
         CAR := APPLE;
     end;
 // end
