@@ -114,8 +114,8 @@ read_statement
     System.out.println("li\t\$v0, 5");
     System.out.println("syscall");
 
-    System.out.println("la\t\$t1, " + $Identifier.text);
-    System.out.println("sw\t\$v0, 0(\$t1)");
+    System.out.println("la\t\$t" + reg + ", " + $Identifier.text);
+    System.out.println("sw\t\$v0, 0(\$t" + reg + ")");
   }
 ;
 
@@ -199,13 +199,19 @@ arith_term
 
 arith_term_R
 :   '*' arith_factor arith_term_R {
-      System.out.println("mult");
+      System.out.println("mult\t\$t" + (reg-2) + ", \$t" + (reg-1));
+      System.out.println("mflo\t\$t" + (reg-2));
+      reg--;
     }
   | '/' arith_factor arith_term_R {
-
+      System.out.println("div\t\$t" + (reg-2) + ", \$t" + (reg-1));
+      System.out.println("mflo\t\$t" + (reg-2));
+      reg--;
     }
   | '%' arith_factor arith_term_R {
-
+      System.out.println("div\t\$t" + (reg-2) + ", \$t" + (reg-1));
+      System.out.println("mfhi\t\$t" + (reg-2));
+      reg--;
     }
   |
 ;

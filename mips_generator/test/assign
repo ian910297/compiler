@@ -9,10 +9,6 @@ procedure EMPTY is
         // assign immediate value
         read APPLE;
         CAR := 100;
-        write APPLE;
-        write CAR;
-
-        // assign a variable
-        CAR := APPLE+APPLE;
+        write APPLE/CAR;
     end;
 // end
