@@ -16,51 +16,6 @@ options {
   private int if_true;
   private int if_false;
   private int if_break;
-
-  // Produce Declare Expression
-  private String declare(String str) {
-    String name = str.split(":")[0];
-    String type = ".word";
-    String value = "0";
-
-    return name + ":" + "\t" + type + "\t" + value;
-  }
-
-  private boolean isNumeric(String str) {
-    return str.matches("-?\\d+(\\.\\d+)?");
-  }
-  /*
-  private boolean isNumeric(String string) {
-    if (string == null || string.isEmpty()) {
-      return false;
-    }
-    int i = 0;
-    int stringLength = string.length();
-    if (string.charAt(0) == '-') {
-      if (stringLength > 1) {
-        i++;
-      } else {
-        return false;
-      }
-    }
-    if (!Character.isDigit(string.charAt(i))
-        || !Character.isDigit(string.charAt(stringLength - 1))) {
-      return false;
-    }
-    i++;
-    stringLength--;
-    if (i >= stringLength) {
-      return true;
-    }
-    for (; i < stringLength; i++) {
-      if (!Character.isDigit(string.charAt(i))
-          && string.charAt(i) != '.') {
-        return false;
-      }
-    }
-    return true;
-  }
-  */
 }
 
 // Parser Rules
@@ -70,11 +25,15 @@ program : PROCEDURE Identifier IS
 END Semi;
 
 variables
-: variables variable { System.out.println(declare($variable.text)); }
+: variables variable
 | /* eplison */
 ;
 
-variable : Identifier ':' 'integer' ';';
+variable
+: Identifier ':' 'integer' ';' {
+    System.out.println($Identifier.text + ":\t.word\t0");
+  }
+;
 
 statements
 : statements statement
@@ -92,17 +51,14 @@ statement
 ;
 
 assignment_statement
-: Identifier ':=' r_assignment_statement=arith_expression ';' {
-  if($r_assignment_statement.expr!=null) {
-    if(isNumeric($r_assignment_statement.expr)) {// immediate value
-      System.out.println("li\t\$t0, 0");
-      System.out.println("la\t\$t1, " + $Identifier.text);
-      System.out.println("sw\t\$t0, 0(\$t1)");
-    } else {
-
-    }
+: Identifier {
+    System.out.println("la\t\$t" + reg + ", " + $Identifier.text);
+    reg++;
   }
-}
+  ':=' arith_expression ';' {
+    System.out.println("sw\t\$t" + (reg-1) + ", 0(\$t" + (reg-2) + ")");
+    reg = reg - 2;
+  }
 ;
 
 if_statement
@@ -137,10 +93,15 @@ if_statement
 ;
 
 for_statement
-: 'for' { System.out.println("L" + label + ":"); }
-  Identifier 'in' for_start=arith_expression '..' for_end=arith_expression 'loop'
-  { System.out.println($for_start.expr + ", " + $for_end.expr); }
-  statements
+: 'for' {
+    System.out.println("L" + label + ":");
+  }
+  Identifier 'in' arith_expression '..' arith_expression 'loop' {
+
+  }
+  statements {
+
+  }
   'end' 'loop' ';'
 ;
 
@@ -159,10 +120,7 @@ read_statement
 ;
 
 write_statement
-: 'write' {
-    System.out.println("#####Write");
-  }
-  print=arith_expression ';' {
+: 'write' arith_expression ';' {
     System.out.println("move \t\$a0, \$t" + (reg-1));
     System.out.println("li\t\$v0, 1");
     System.out.println("syscall");
@@ -219,78 +177,60 @@ relation_op
 : '=' | '<>' | '>' | '>=' | '<' | '<='
 ;
 
-arith_expression returns [String expr]
-: r_arith_expression=arith_term arith_expression_R {
-    $expr=$r_arith_expression.expr;
-    System.out.println("##arith return" + $expr);
-  }
+arith_expression
+: arith_term arith_expression_R
 ;
 
-arith_expression_R returns [String expr]
-:   '+' r_arith_expression_R=arith_term arith_expression_R {
-      $expr=$r_arith_expression_R.expr;
-
+arith_expression_R
+:   '+' arith_term arith_expression_R {
       System.out.println("add\t\$t" + (reg-2) + ", \$t" + (reg-2) + ", \$t" + (reg-1));
       reg--;
-
-      System.out.println("###arith_R return" + $expr);
     }
-  | '-' r_arith_expression_R=arith_term arith_expression_R {
-      $expr=$r_arith_expression_R.expr;
-
+  | '-' arith_term arith_expression_R {
       System.out.println("sub\t\$t" + (reg-2) + ", \$t" + (reg-2) + ", \$t" + (reg-1));
       reg--;
-
-      System.out.println("###arith_R return" + $expr);
     }
   |
 ;
 
-arith_term returns [String expr]
-: r_arith_term=arith_factor { $expr=$r_arith_term.expr; } arith_term_R
+arith_term
+: arith_factor arith_term_R
 ;
 
-arith_term_R returns [String expr]
-:   '*' r_arith_term_R=arith_factor arith_term_R {
-      $expr=$r_arith_term_R.expr;
+arith_term_R
+:   '*' arith_factor arith_term_R {
       System.out.println("mult");
     }
-  | '/' r_arith_term_R=arith_factor arith_term_R {
-      $expr=$r_arith_term_R.expr;
+  | '/' arith_factor arith_term_R {
 
     }
-  | '%' r_arith_term_R=arith_factor arith_term_R {
-      $expr=$r_arith_term_R.expr;
+  | '%' arith_factor arith_term_R {
+
     }
   |
 ;
 
-arith_factor returns [String expr]
-: ( '-' r_arith_factor=arith_primary {
-      $expr=$r_arith_factor.expr;
+arith_factor
+: ( '-' arith_primary {
       System.out.println("li\t\$t" + reg + ", 0");
       System.out.println("sub\t\$t" + (reg-1) + ", \$t" + (reg-1) + ", \$t" + (reg-1));
       System.out.println("sub\t\$t" + (reg-1) + ", \$t" + (reg-1) + ", \$t" + (reg-1));
     }
-    | r_arith_factor=arith_primary { $expr=$r_arith_factor.expr; }
+    | arith_primary
   )
 ;
 
-arith_primary returns [String expr]
+arith_primary
 : ( Constant {
-      $expr=$Constant.text;
-
       System.out.println("li\t\$t" + reg + ", " + $Constant.text);
       reg++;
     }
     | Identifier {
-      $expr=$Identifier.text;
-
       System.out.println("la\t\$t" + (reg+1) + ", " +$Identifier.text);
       System.out.println("lw\t\$t" + reg + ", 0(\$t" + (reg+1) + ")");
       reg++;
     }
-    | '(' r_arith_primary=arith_expression ')' { $expr=$r_arith_primary.expr; }
+    | '(' arith_expression ')'
   )
 ;
 

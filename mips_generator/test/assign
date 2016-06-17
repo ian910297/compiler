@@ -7,9 +7,12 @@ procedure EMPTY is
         CAR: integer; // declare a variable which name is CAR
     begin
         // assign immediate value
-        APPLE := 10;
+        read APPLE;
+        CAR := 100;
+        write APPLE;
+        write CAR;
 
         // assign a variable
-        CAR := APPLE;
+        CAR := APPLE+APPLE;
     end;
 // end
