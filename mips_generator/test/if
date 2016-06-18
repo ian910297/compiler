@@ -1,0 +1,16 @@
+// A sample Rose program
+
+procedure EMPTY is
+    declare
+        APPLE: integer; // declare a variable which name is APPLE
+        BANANA: integer; // declare a variable which name is BANANA
+        CAR: integer; // declare a variable which name is CAR
+    begin
+        CAR := 200;
+        if CAR < 200 then
+          write CAR;
+        else
+          write CAR+CAR;
+        end if;
+    end;
+// end

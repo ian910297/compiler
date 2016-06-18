@@ -16,6 +16,30 @@ options {
   private int if_true;
   private int if_false;
   private int if_break;
+
+  private int debugPrintReg(int target) {
+    System.out.println("move\t\$a0, \$t" + (target));
+    System.out.println("li\t\$v0, 1");
+    System.out.println("syscall");
+
+    //ascii code for LF, if you have any trouble try 0xD for CR.
+    System.out.println("addi\t\$a0, \$0, 0xA");
+    //syscall 11 prints the lower 8 bits of \$a0 as an ascii character.
+    System.out.println("addi\t\$v0, \$0, 0xB");
+    System.out.println("syscall");
+
+    return 0;
+  }
+
+  private int newline() {
+    //ascii code for LF, if you have any trouble try 0xD for CR.
+    System.out.println("addi\t\$a0, \$0, 0xA");
+    //syscall 11 prints the lower 8 bits of \$a0 as an ascii character.
+    System.out.println("addi\t\$v0, \$0, 0xB");
+    System.out.println("syscall");
+
+    return 0;
+  }
 }
 
 // Parser Rules
@@ -62,12 +86,14 @@ assignment_statement
 ;
 
 if_statement
-: ( 'if' if_result=bool_expression 'then' {
+: ( 'if' bool_expression 'then' {
       if_true = label++;
-      if_false = label++;
       if_break = label++;
 
-      System.out.println("beqz\t\$t" + reg + ", L" + if_true);
+      reg--;
+      System.out.println("beq\t\$t" + reg + ", \$zero, L" + if_true);
+      System.out.println("j L" + if_break);
+
       System.out.println("L" + if_true + ":");
     }
     statements {
@@ -79,16 +105,19 @@ if_statement
       if_false = label++;
       if_break = label++;
 
-      System.out.println("beqz\t\$t" + reg + ", L" + if_true);
+      reg--;
+      System.out.println("bne\t\$t" + reg + ", \$zero, L" + if_true);
+      System.out.println("j L" + if_false);
+
       System.out.println("L" + if_true + ":");
     }
     statements 'else' {
+      System.out.println("j L" + if_break);
       System.out.println("L" + if_false + ":");
     }
-    statements {
+    statements 'end' 'if' ';' {
       System.out.println("L" + if_break + ":");
     }
-    'end' 'if' ';'
   )
 ;
 
@@ -134,8 +163,11 @@ bool_expression
 ;
 
 bool_expression_R
-: '||' bool_term bool_expression_R
-|
+: '||' bool_term bool_expression_R {
+    System.out.println("or\t\$t" + (reg-2) + ", \$t" + (reg-2) + ", \$t" + (reg-1));
+    reg--;
+  }
+  |
 ;
 
 bool_term
@@ -143,33 +175,63 @@ bool_term
 ;
 
 bool_term_R
-: '&&' bool_factor bool_term_R
-|
+: '&&' bool_factor bool_term_R {
+    System.out.println("and\t\$t" + (reg-2) + ", \$t" + (reg-2) + ", \$t" + (reg-1));
+    reg--;
+  }
+  |
 ;
 
 bool_factor
-: ( '!' bool_primary
+: ( '!' bool_primary {
+      System.out.println("beq\t\$zero, \$t" + (reg-1) + ", L" + label);
+      System.out.println("j L" + (label+1));
+
+      System.out.println("L" + label + ":");
+      System.out.println("addi\t\$t" + (reg-1) + ", \$zero, 1");
+      System.out.println("j L" + (label+2));
+
+      System.out.println("L" + (label+1) + ":");
+      System.out.println("add\t\$t" + (reg-1) + ", \$zero, \$zero");
+
+      System.out.println("L" + (label+2) + ":");
+      label += 3;
+    }
     | bool_primary
   )
 ;
 
 bool_primary
 : arith_expression relation_op arith_expression {
-    if($relation_op.text == "=") {
+    // TRUE RETURN 1
+    System.out.println("sub\t\$t" + (reg-2) + ", \$t" + (reg-2) + ", \$t" + (reg-1));
 
-    } else if($relation_op.text == "<>") {
-
-    } else {
-      if($relation_op.text == "<") {
-
-      } else if($relation_op.text == ">") {
-
-      } else if($relation_op.text == "<=") {
-
-      } else if($relation_op.text == ">=") {
-
-      }
+    if($relation_op.text.equals("=")) {
+      System.out.println("beq\t\$zero, \$t" + (reg-2) + ", L" + label);
+    } else if($relation_op.text.equals("<>")) {
+      System.out.println("bne\t\$zero, \$t" + (reg-2) + ", L" + label);
+    } else if($relation_op.text.equals("<")) {
+      System.out.println("bltz\t\$t" + (reg-2) + ", L" + label);
+    } else if($relation_op.text.equals(">")) {
+      System.out.println("bgtz\t\$t" + (reg-2) + ", L" + label);
+    } else if($relation_op.text.equals("<=")) {
+      System.out.println("blez\t\$t" + (reg-2) + ", L" + label);
+    } else if($relation_op.text.equals(">=")) {
+      System.out.println("bgez\t\$t" + (reg-2) + ", L" + label);
     }
+
+    System.out.println("j L" + (label+1));
+
+    System.out.println("L" + label + ":");
+    System.out.println("addi\t\$t" + (reg-2) + ", \$zero, 1");
+    System.out.println("j L" + (label+2));
+
+    System.out.println("L" + (label+1) + ":");
+    System.out.println("add\t\$t" + (reg-2) + ", \$zero, \$zero");
+
+    System.out.println("L" + (label+2) + ":");
+    label += 3;
+    reg--;
   }
 ;
 
