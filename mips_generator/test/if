@@ -6,11 +6,18 @@ procedure EMPTY is
         BANANA: integer; // declare a variable which name is BANANA
         CAR: integer; // declare a variable which name is CAR
     begin
-        CAR := 200;
+        CAR := 100;
         if CAR < 200 then
+
           write CAR;
-        else
-          write CAR+CAR;
+          CAR := CAR + 150;
+
+          if CAR < 200 then
+            write CAR;
+          else
+            write CAR+CAR;
+          end if;
+
         end if;
     end;
 // end

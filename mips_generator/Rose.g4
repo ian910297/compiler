@@ -13,9 +13,10 @@ options {
   private int label = 0;
   private int reg = 0;
 
-  private int if_true;
-  private int if_false;
-  private int if_break;
+  private int if_index = 0;
+  private int [] if_true = new int [100];
+  private int [] if_false = new int [100];
+  private int [] if_break = new int [100];
 
   private int debugPrintReg(int target) {
     System.out.println("move\t\$a0, \$t" + (target));
@@ -87,55 +88,68 @@ assignment_statement
 
 if_statement
 : ( 'if' bool_expression 'then' {
-      if_true = label++;
-      if_break = label++;
-
+      if_true[if_index] = label++;
+      if_false[if_index] = label++;
+      if_break[if_index] = label++;
       reg--;
-      System.out.println("beq\t\$t" + reg + ", \$zero, L" + if_true);
-      System.out.println("j L" + if_break);
+      System.out.println("bne\t\$t" + reg + ", \$zero, L" + if_true[if_index]);
+      System.out.println("j L" + if_break[if_index]);
 
-      System.out.println("L" + if_true + ":");
+      System.out.println("L" + if_true[if_index] + ":");
+      if_index++;
     }
     statements {
-      System.out.println("L" + if_break + ":");
+      if_index--;
+      System.out.println("L" + if_break[if_index] + ":");
     }
     'end' 'if' ';'
     | 'if' bool_expression 'then' {
-      if_true = label++;
-      if_false = label++;
-      if_break = label++;
+      if_true[if_index] = label++;
+      if_false[if_index] = label++;
+      if_break[if_index] = label++;
 
       reg--;
-      System.out.println("bne\t\$t" + reg + ", \$zero, L" + if_true);
-      System.out.println("j L" + if_false);
+      System.out.println("bne\t\$t" + reg + ", \$zero, L" + if_true[if_index]);
+      System.out.println("j L" + if_false[if_index]);
 
-      System.out.println("L" + if_true + ":");
+      System.out.println("L" + if_true[if_index] + ":");
+      if_index++;
     }
     statements 'else' {
-      System.out.println("j L" + if_break);
-      System.out.println("L" + if_false + ":");
+      if_index--;
+      System.out.println("j L" + if_break[if_index]);
+      System.out.println("L" + if_false[if_index] + ":");
+      if_index++;
     }
     statements 'end' 'if' ';' {
-      System.out.println("L" + if_break + ":");
+      if_index--;
+      System.out.println("L" + if_break[if_index] + ":");
     }
   )
 ;
 
 for_statement
-: 'for' {
+: 'for' Identifier 'in' arith_expression '..' arith_expression 'loop' {
+    System.out.println("la\t\$t" + reg + ", " + $Identifier.text);
+    System.out.println("sw\t\$t," + (reg-2) + " 0(\$t" + reg + ")");
+    reg++;
+
     System.out.println("L" + label + ":");
-  }
-  Identifier 'in' arith_expression '..' arith_expression 'loop' {
+    label++;
 
   }
   statements {
-
+    System.out.println("addi\t\$t" + (reg-3) + "\$t" + (reg-3) + ", 1");
+    System.out.println("sw\t\$t," + (reg-3) + " 0(\$t" + (reg-1) + ")");
   }
   'end' 'loop' ';'
 ;
 
 exit_statement
-: 'exit' ';'
+: 'exit' ';' {
+  System.out.println("li\t\$v0, 10");
+  System.out.println("syscall");
+}
 ;
 
 read_statement
