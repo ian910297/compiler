@@ -5,8 +5,20 @@ procedure EMPTY is
         APPLE: integer; // declare a variable which name is APPLE
         CAR: integer; // declare a variable which name is CAR
     begin
-      for CAR in 0 .. -1 loop
-        APPLE := 1;
+      APPLE := 1;
+      CAR := 1000;
+
+      for CAR in 0 .. 10 loop
+        APPLE := APPLE + 10;
+
+
+        if APPLE < 50 then
+          write APPLE;
+        else
+          exit;
+        end if;
+
+        CAR := 1000;
       end loop;
     end;
 // end

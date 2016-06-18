@@ -18,6 +18,10 @@ options {
   private int [] if_false = new int [100];
   private int [] if_break = new int [100];
 
+  private int for_index = 0;
+  private int [] for_start = new int [100];
+  private int [] for_end = new int [100];
+
   private int debugPrintReg(int target) {
     System.out.println("move\t\$a0, \$t" + (target));
     System.out.println("li\t\$v0, 1");
@@ -130,17 +134,30 @@ if_statement
 
 for_statement
 : 'for' Identifier 'in' arith_expression '..' arith_expression 'loop' {
+    for_start[for_index] = label++;
+    for_end[for_index] = label++;
+
     System.out.println("la\t\$t" + reg + ", " + $Identifier.text);
-    System.out.println("sw\t\$t," + (reg-2) + " 0(\$t" + reg + ")");
-    reg++;
+    System.out.println("sw\t\$t" + (reg-2) + ", 0(\$t" + reg + ")");
 
-    System.out.println("L" + label + ":");
-    label++;
-
+    System.out.println("beq\t\$t" + (reg-2) + ", \$t" + (reg-1) + ", L" + for_end[for_index]);
+    System.out.println("L" + for_start[for_index] + ":");
+    for_index++;
   }
   statements {
-    System.out.println("addi\t\$t" + (reg-3) + "\$t" + (reg-3) + ", 1");
-    System.out.println("sw\t\$t," + (reg-3) + " 0(\$t" + (reg-1) + ")");
+    for_index--;
+    System.out.println("la\t\$t" + reg + ", " + $Identifier.text);
+    System.out.println("lw\t\$t" + (reg-2) + ", 0(\$t" + reg + ")");
+
+    System.out.println("sub\t\$t" + (reg+1) + ", \$t" + (reg-2) + ", \$t" + (reg-1));
+    System.out.println("bgtz\t\$t" + (reg+1) + ", L" + for_end[for_index]);
+
+    System.out.println("addi\t\$t" + (reg-2) + ", \$t" + (reg-2) + ", 1");
+    System.out.println("sw\t\$t" + (reg-2) + ", 0(\$t" + reg + ")");
+    System.out.println("j L" + for_start[for_index]);
+
+    System.out.println("L" + for_end[for_index] + ":");
+    reg -= 2;
   }
   'end' 'loop' ';'
 ;
