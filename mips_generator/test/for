@@ -4,21 +4,15 @@ procedure EMPTY is
     declare
         APPLE: integer; // declare a variable which name is APPLE
         CAR: integer; // declare a variable which name is CAR
+        PIE: integer; // declare a variable which name is PIE
     begin
-      APPLE := 1;
-      CAR := 1000;
+      APPLE := 50;
 
-      for CAR in 0 .. 10 loop
-        APPLE := APPLE + 10;
-
-
-        if APPLE < 50 then
-          write APPLE;
-        else
-          exit;
-        end if;
-
-        CAR := 1000;
+      for CAR in 0 .. APPLE loop
+        PIE := PIE + CAR;
+        write PIE;
       end loop;
+
+      write PIE;
     end;
 // end

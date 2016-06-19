@@ -1,0 +1,111 @@
+// A sample Rose program
+
+procedure EMPTY is
+    declare
+        APPLE: integer; // declare a variable which name is APPLE
+        BANANA: integer; // declare a variable which name is BANANA
+        CAR: integer; // declare a variable which name is CAR
+    begin
+        // assignments
+        APPLE := 10;
+        BANANA := (6 + 1) * (50 - (2 % 3)) / - 1;
+        CAR := APPLE / BANANA + BANANA / APPLE;
+
+        // system call
+        read APPLE;
+        write 1;
+        write APPLE;
+
+        // normal condition
+        if APPLE >= BANANA then
+            write 2;
+        end if;
+
+        // if and else
+        if CAR < 5 then
+            write 3;
+        else
+            write 4;
+        end if;
+
+        // not condition
+        if ! 1 <> 1 then
+            exit;
+        end if;
+
+        // logic and, or
+        if 1 = 1 && 5 = APPLE && 3 = 3 then
+            write 5;
+        end if;
+
+        if 1 = 1 || 4 <= APPLE || 1 = 2 then
+            write 6;
+        end if;
+
+        if ! 3 = 4 && 7 >= 5 || ! 3 <> 5 || 5 <> 5 && 1 = 2 then
+            write 7;
+        end if;
+
+        // multiple if
+        if 1 = 1 then
+            if 5 = 5 || 5 = 6 then
+                if 7 >= 5 then
+                    write 8;
+                end if;
+
+                write 9;
+            else
+                if ! 3 = 4 && ! 3 < 1 || ! 5 <> 5 then
+                    write 10;
+                else
+                    if 5 = 5 then
+                        write 11;
+                    end if;
+                end if;
+            end if;
+        end if;
+
+        // for loop
+        for APPLE in 5 + 7 .. 2 + BANANA * 5 loop
+            write 12;
+        end loop;
+
+        // multiple for loop
+        for APPLE in 1 .. 100 loop
+            for BANANA in 1 .. 50 loop
+                for CAR in 1 .. 10 loop
+                    write APPLE / BANANA % CAR;
+                end loop;
+            end loop;
+        end loop;
+
+        // loop with condition
+        for APPLE in 1 .. 100 loop
+            if 2 = 2 then
+                for CAR in 1 .. 50 loop
+                    if 1 = CAR % 2 then
+                        write 13;
+                    else
+                        write 14;
+                    end if;
+
+                    write 15;
+                end loop;
+            end if;
+
+            for BANANA in 1 .. 50 loop
+                for CAR in 1 .. 10 loop
+                    if 5 = 5 then
+                        if 7 <> 5 then
+                            if 1 = 1 then
+                                write 16;
+                            else
+                                write 17;
+                            end if;
+                        end if;
+                    end if;
+                end loop;
+            end loop;
+        end loop;
+    end;
+// end

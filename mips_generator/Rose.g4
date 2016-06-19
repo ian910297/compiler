@@ -154,6 +154,8 @@ for_statement
 
     System.out.println("addi\t\$t" + (reg-2) + ", \$t" + (reg-2) + ", 1");
     System.out.println("sw\t\$t" + (reg-2) + ", 0(\$t" + reg + ")");
+    System.out.println("sub\t\$t" + (reg+1) + ", \$t" + (reg-2) + ", \$t" + (reg-1));
+    System.out.println("bgtz\t\$t" + (reg+1) + ", L" + for_end[for_index]);
     System.out.println("j L" + for_start[for_index]);
 
     System.out.println("L" + for_end[for_index] + ":");
